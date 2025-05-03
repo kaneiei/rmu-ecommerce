@@ -29,12 +29,12 @@ const HomePage = () => {
   };
   return (
     <div className="text-center pt-8 text-3xl font-bold">
-      <h1> จำนวนนับ : {count} </h1>
+      {/* <h1> จำนวนนับ : {count} </h1>
       <Button onClick={() => handleClick()}>เพิ่มจำนวนนับ</Button>
       <Button onClick={() => handleSetname()}>update name</Button>
-      <h2> ชื่อ : {name} </h2>
+      <h2> ชื่อ : {name} </h2> */}
       ยินดีต้อนรับสู่ Gundan Shop
-      <br />
+      {/* <br /> */}
       <SigninButton />
     </div>
   );

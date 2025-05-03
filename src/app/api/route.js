@@ -2,6 +2,8 @@
 import { Elysia, t } from 'elysia'
 import swagger from '@elysiajs/swagger'
 import { products } from '@/lib/mock-data'
+import { productsRoute } from '@/server/routes/productRoute'
+import { authenRoute } from '@/server/routes/authenRoute'
 
 const swaggerconfig = {
     title: 'Elysia',
@@ -14,15 +16,10 @@ const swaggerconfig = {
 }
 const app = new Elysia({ prefix: '/api' })
     .use(swagger(swaggerconfig))
-    .get('/', () => 'hello Next')
-    .post('/', ({ body }) => body, {
-        body: t.Object({
-            name: t.String()
-        })
-    })
-    .get('/products', () => {
-        return products
-    })
+    .use(productsRoute)
+    .use(authenRoute)
 
 export const GET = app.handle
 export const POST = app.handle 
+export const PUT = app.handle
+export const DELETE = app.handle
