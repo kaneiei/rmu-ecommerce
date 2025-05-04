@@ -26,6 +26,12 @@ export const authenRoute = new Elysia({ prefix: "/authen" })
         })
     })
     .post("login", async ({ body }) => {
+        const checkLogin = authenCon.login(body);
+        if (checkLogin.error) {
+            return error(400, user.error.message);
+        
+        } else if (checkLogin) {
+        }
         const { email, password } = body;
         const user = await db.oneOrNone("SELECT * FROM public.users WHERE email = $1", [email]);
         if (!user) {

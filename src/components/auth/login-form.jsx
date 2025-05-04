@@ -7,16 +7,20 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export function LoginForm({ className, ...props }) {
   const router = useRouter();
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,6 +28,8 @@ export function LoginForm({ className, ...props }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     try {
       const result = await signIn("credentials", {
@@ -33,14 +39,17 @@ export function LoginForm({ className, ...props }) {
       });
 
       if (result?.error) {
-        alert(result.error);
+        setError(result.error);
+        console.error("เข้าสู่ระบบล้มเหลว:", result.error);
       } else {
-        alert("เข้าสู่ระบบสำเร็จ");
+        console.log("เข้าสู่ระบบสำเร็จ!");
         router.push("/profile");
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+      setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,6 +63,12 @@ export function LoginForm({ className, ...props }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
@@ -61,12 +76,15 @@ export function LoginForm({ className, ...props }) {
                 <Input
                   id="email"
                   name="email"
+                  type="email"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  placeholder="m@example.com"
+                  placeholder="test@example.com"
                   required
+                  disabled={isLoading}
+                  className="focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div className="grid gap-2">
@@ -82,23 +100,25 @@ export function LoginForm({ className, ...props }) {
                 <Input
                   id="password"
                   type="password"
-                  required
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
+                  required
+                  disabled={isLoading}
+                  className="focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <Button type="submit" className="w-full">
-                เข้าสู่ระบบ
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" disabled={isLoading} type="button">
                 เข้าสู่ระบบด้วย Google
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
               ยังไม่มีบัญชีผู้ใช้?{" "}
-              <a href="#" className="underline underline-offset-4">
+              <a href="/register" className="underline underline-offset-4">
                 ลงทะเบียน
               </a>
             </div>

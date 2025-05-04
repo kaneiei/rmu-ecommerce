@@ -1,7 +1,6 @@
 // app/api/[[...slugs]]/route.ts
 import { Elysia, t } from 'elysia'
 import swagger from '@elysiajs/swagger'
-import { products } from '@/lib/mock-data'
 import { productsRoute } from '@/server/routes/productRoute'
 import { authenRoute } from '@/server/routes/authenRoute'
 

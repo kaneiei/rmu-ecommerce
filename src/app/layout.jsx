@@ -2,8 +2,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import MainLayout from "@/layout/main-layout";
+// นำเข้าเฉพาะ SessionProvider เดียว
 import { SessionProvider } from "@/components/auth/session-provider";
-import { getServerSession } from "next-auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,15 +20,12 @@ export const metadata = {
   description: "ร้านค้าออนไลน์จำหน่ายสินค้าคุณภาพดี",
 };
 
-export default async function RootLayout({ children }) {
-  // ควรมี auth options ด้วยหากใช้ getServerSession
-  const session = await getServerSession();
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <SessionProvider session={session}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* ใช้ SessionProvider แค่ตัวเดียว */}
+        <SessionProvider>
           <MainLayout>{children}</MainLayout>
         </SessionProvider>
       </body>
