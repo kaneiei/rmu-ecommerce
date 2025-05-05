@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { createPool } from '@vercel/postgres';
 import bcrypt from 'bcrypt';
 
-// สร้าง pool connection สำหรับ PostgreSQL
+// สร้าง pool connection
 const pool = createPool({
   connectionString: `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}?sslmode=require`
 });
@@ -22,43 +22,52 @@ export const authOptions = {
         }
         
         try {
-          // ค้นหาผู้ใช้จากฐานข้อมูล
+          console.log("NextAuth login attempt for:", credentials.email);
+          
+          // ค้นหาผู้ใช้
           const result = await pool.query(
             'SELECT * FROM users WHERE email = $1',
             [credentials.email]
           );
           
-          const user = result.rows[0];
-
-          // ถ้าไม่พบอีเมลในฐานข้อมูล
-          if (!user) {
-            console.log("ไม่พบบัญชีผู้ใช้:", credentials.email);
+          // ถ้าไม่พบผู้ใช้
+          if (result.rows.length === 0) {
+            console.log("User not found:", credentials.email);
             throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
           }
-
-          // ถ้าพบอีเมลแล้ว ให้ตรวจสอบรหัสผ่าน
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           
-          // ถ้ารหัสผ่านไม่ตรงกัน
-          if (!isPasswordValid) {
-            console.log("รหัสผ่านไม่ถูกต้องสำหรับ:", credentials.email);
+          const user = result.rows[0];
+          
+          console.log("User found:", {
+            email: user.email,
+            fullName: user.full_name,
+            role: user.role
+          });
+          
+          // ตรวจสอบรหัสผ่าน
+          const isValidPassword = await bcrypt.compare(
+            credentials.password,
+            user.password_hash
+          );
+          
+          console.log("Password validation result:", isValidPassword);
+          
+          if (!isValidPassword) {
+            console.log("Invalid password for:", credentials.email);
             throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
           }
-
-          // ส่งคืนข้อมูลผู้ใช้ (ไม่รวมรหัสผ่าน)
+          
+          // ส่งคืนข้อมูลผู้ใช้
+          console.log("Login successful for:", credentials.email);
           return {
             id: user.id,
-            name: user.fullname || user.username || user.name,
+            name: user.full_name, // ใช้ full_name แทน fullname
             email: user.email,
-            role: user.role || "user"
+            role: user.role
           };
         } catch (error) {
-          console.error("ข้อผิดพลาดในการตรวจสอบ:", error);
-          if (error.message === "อีเมลหรือรหัสผ่านไม่ถูกต้อง") {
-            throw new Error(error.message);
-          } else {
-            throw new Error("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล กรุณาลองใหม่อีกครั้ง");
-          }
+          console.error("Authentication error:", error);
+          throw error;
         }
       }
     }),
@@ -87,11 +96,11 @@ export const authOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 วัน
-    updateAge: 24 * 60 * 60 // 24 ชั่วโมง
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60
   },
   secret: process.env.NEXTAUTH_SECRET || "e7fbd18e6d09aa4ef10cb51c8b1ea0de"
-}
+};
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

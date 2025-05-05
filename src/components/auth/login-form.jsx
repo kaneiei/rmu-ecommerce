@@ -11,20 +11,29 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 export function LoginForm({ className, ...props }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get("registered");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (registered === "true") {
+      setSuccess("ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ");
+    }
+  }, [registered]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,10 +73,14 @@ export function LoginForm({ className, ...props }) {
         </CardHeader>
         <CardContent>
           {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <div className="mb-6 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-6 p-3 bg-green-50 text-green-700 border border-green-200 rounded-md">
+              {success}
+            </div>
           )}
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">

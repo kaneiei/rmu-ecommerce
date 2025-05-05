@@ -4,6 +4,7 @@ import React from "react";
 import { products, categories } from "@/lib/mock-data";
 // import { fetcher } from "@/lib/fetchdata";
 import useSWR from "swr";
+import { fetcher } from "@/lib/fetchData";
 const ProductPage = () => {
   const { data, error, isLoading } = useSWR(`/api/products`, fetcher)
   console.log("data", data);
