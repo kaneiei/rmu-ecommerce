@@ -1,4 +1,4 @@
-'use client";'
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import MainLayout from "@/layout/main-layout";

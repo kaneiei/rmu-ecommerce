@@ -1,11 +1,11 @@
-import NextAuth from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { createPool } from '@vercel/postgres';
-import bcrypt from 'bcrypt';
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
+import { createPool } from "@vercel/postgres";
 
-// สร้าง pool connection
+// สร้าง connection pool
 const pool = createPool({
-  connectionString: `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}?sslmode=require`
+  connectionString: `postgres://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}?sslmode=require`,
 });
 
 export const authOptions = {
@@ -14,7 +14,7 @@ export const authOptions = {
       name: "login username/password",
       credentials: {
         email: { label: "email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -22,9 +22,9 @@ export const authOptions = {
         }
         
         try {
-          console.log("NextAuth login attempt for:", credentials.email);
+          console.log("Attempting login for:", credentials.email);
           
-          // ค้นหาผู้ใช้
+          // ค้นหาผู้ใช้จากฐานข้อมูลโดยตรง
           const result = await pool.query(
             'SELECT * FROM users WHERE email = $1',
             [credentials.email]
@@ -37,31 +37,25 @@ export const authOptions = {
           }
           
           const user = result.rows[0];
+          console.log("Found user:", user.email);
           
-          console.log("User found:", {
-            email: user.email,
-            fullName: user.full_name,
-            role: user.role
-          });
-          
-          // ตรวจสอบรหัสผ่าน
-          const isValidPassword = await bcrypt.compare(
+          // เปรียบเทียบรหัสผ่าน
+          console.log("Comparing password");
+          const isPasswordValid = await bcrypt.compare(
             credentials.password,
             user.password_hash
           );
           
-          console.log("Password validation result:", isValidPassword);
+          console.log("Password valid:", isPasswordValid);
           
-          if (!isValidPassword) {
-            console.log("Invalid password for:", credentials.email);
+          if (!isPasswordValid) {
             throw new Error("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
           }
           
           // ส่งคืนข้อมูลผู้ใช้
-          console.log("Login successful for:", credentials.email);
           return {
             id: user.id,
-            name: user.full_name, // ใช้ full_name แทน fullname
+            name: user.full_name,
             email: user.email,
             role: user.role
           };
@@ -69,37 +63,34 @@ export const authOptions = {
           console.error("Authentication error:", error);
           throw error;
         }
-      }
+      },
     }),
   ],
-  pages: {
-    signIn: "/login",
-    error: "/login",
-    verifyRequest: "/auth/verify-request",
-    newUser: null
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = user.role
+        token.id = user.id;
+        token.role = user.role;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id
-        session.user.role = token.role
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
-      return session
+      return session;
     }
   },
+  pages: {
+    signIn: "/login",
+  },
+  secret: process.env.NEXTAUTH_SECRET || "your-fallback-secret",
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60
+    maxAge: 60 * 60 * 24 * 30,
   },
-  secret: process.env.NEXTAUTH_SECRET || "e7fbd18e6d09aa4ef10cb51c8b1ea0de"
+  debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions);
